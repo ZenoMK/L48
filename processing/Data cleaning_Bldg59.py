@@ -10,14 +10,13 @@ import math
 
 path = r"../data"
 files = os.listdir(path)
-path_postprocess = r"../processedData/"
+path_postprocess = r"../processedData"
 
 #read data files and adjust time format
 for filename in files:
     print(filename)
     row = pd.read_csv(path+'/'+filename)
-    print(row)
-    row['date'] = pd.to_datetime(row['date'], format="%m/%d/%Y %H:%M")
+    row['date'] = pd.to_datetime(row['date'], format="%Y/%m/%d %H:%M")
     helper=pd.DataFrame({'date': pd.date_range(row['date'].min(), row['date'].max(), freq='15min')})
     row = pd.merge(row, helper, on='date', how='outer').sort_values('date')
     count_out = Series([0],index=['date']) #count of outlier values
@@ -26,6 +25,7 @@ for filename in files:
     gap_max=Series([0],index=['date']) #maximum gap
     #calculate the count of gap and do the interpolation based on the gap size
     for i in range(1, len(row.columns)):
+        print("here!"+str(i))
         k = 0
         out_gapcount=0
         start_index = {}
@@ -61,6 +61,7 @@ for filename in files:
         row_interpolation=np.array(row.iloc[:,1:])
     row_interpolation= KNN(k=3).fit_transform(row_interpolation) #Apply knn algorithm if the gap is larger than one hour
     for i in range(1, len(row.columns)):
+        print("here!")
         k=0
         start_index = {}
         starttime = {}
@@ -74,16 +75,18 @@ for filename in files:
                 endtime[k]=row.iloc[j,0]
                 end_index[k]=j
                 k=k+1
+        print("here2!")
         for m in range(k):
             starttime_struct=datetime.datetime.strptime(str(starttime[m]), '%Y-%m-%d %H:%M:%S')
             endtime_struct = datetime.datetime.strptime(str(endtime[m]), '%Y-%m-%d %H:%M:%S')
             gap[m]=(endtime_struct-starttime_struct).total_seconds()
             if  gap[m]>= 3600*24:
                 row_interpolation[start_index[m]:end_index[m]+1,i-1]=None
+        print("here3!")
     if out_gapcount !=0:
         row_interpolation= MatrixFactorization().fit_transform(row_interpolation) #Apply MF algorithm if the gap is larger than one day
     row.iloc[:,1:]=row_interpolation
     cols_not_null = (len(row)-row.count(axis=0))/len(row)
     data=pd.DataFrame({'missingrate':cols_not_null,'outrate':count_out,'count_outgap':count_outgap,'count_gap':count_gap,'maxgap':gap_max})
-    data.to_csv(path_postprocess+'\\'+'parameter_'+filename, sep=',', header=True, index=True)
-    row.to_csv(path_postprocess+'\\'+'data_'+filename, sep=',', header=True, index=False)
+    data.to_csv(path_postprocess+'/'+'parameter_'+filename, sep=',', header=True, index=True)
+    row.to_csv(path_postprocess+'/'+'data_'+filename, sep=',', header=True, index=False)
