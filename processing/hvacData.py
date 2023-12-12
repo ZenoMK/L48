@@ -5,7 +5,7 @@ def fahrenheit_to_celsius(x):
     return (x - 32) * (5/9)
 
 
-hp_hws_temp = pd.read_csv("../data/hp_hws_temp.csv")
+hp_hws_temp = pd.read_csv("../data/HVACdata/hp_hws_temp.csv")
 hp_hws_temp["date"] = pd.to_datetime(hp_hws_temp["date"])
 missing = pd.date_range(hp_hws_temp.date.min(), hp_hws_temp.date.max(), freq='1min').difference(hp_hws_temp.date)
 hp_hws_temp.resample("1T").fillna(method=None)
